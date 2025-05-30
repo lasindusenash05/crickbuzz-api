@@ -8,12 +8,15 @@ export default {
   async fetch(request) {
     const { searchParams } = new URL(request.url);
     const filter = searchParams.get("filter") || "live";
-
     const targetUrl = URL_MAP[filter] || URL_MAP.live;
 
     const res = await fetch(targetUrl, {
-      headers: { "User-Agent": "Mozilla/5.0" }
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+        "Accept-Language": "en-US,en;q=0.9"
+      }
     });
+
     const html = await res.text();
 
     const matches = [];
@@ -26,11 +29,13 @@ export default {
       const descMatch = block.match(/<div class="cb-col-100">(.*?)<\/div>/);
       const scoreMatches = [...block.matchAll(/<div class="cb-col-50[^"]*">(.*?)<\/div>/g)];
 
-      matches.push({
-        title: titleMatch ? titleMatch[1].trim() : null,
-        status: descMatch ? descMatch[1].trim() : null,
-        scores: scoreMatches.map(m => m[1].trim())
-      });
+      const title = titleMatch ? titleMatch[1].trim() : null;
+      const status = descMatch ? descMatch[1].trim() : null;
+      const scores = scoreMatches.map(m => m[1].trim());
+
+      if (title) {
+        matches.push({ title, status, scores });
+      }
     }
 
     return Response.json({ matches });
